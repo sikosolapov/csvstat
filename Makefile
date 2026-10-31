@@ -1,11 +1,3 @@
-# Makefile для csvstat
-#
-#   make                 отладочная сборка с ASan и UBSan -> build/debug/csvstat
-#   make MODE=release    сборка -O2 без санитайзеров      -> build/release/csvstat
-#   make release         то же, что MODE=release
-#   make test            запустить tests/*.sh
-#   make clean           удалить build/
-
 CC     ?= cc
 TARGET := csvstat
 MODE   ?= debug
