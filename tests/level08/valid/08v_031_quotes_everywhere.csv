@@ -1,0 +1,4 @@
+"name","age","comment"
+"Alice","42","hello, ""world"""
+"Bob","3.5",""
+"Carol",,"  spaced  "

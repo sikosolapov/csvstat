@@ -1,0 +1,7 @@
+"person;id";value;comment;empty
+"Alice;A";1e10;"first line
+second ""quoted""; line";
+"Bob";-2.5E-3;"plain; text";""
+"Carol";+7E+4;"x
+
+y";   

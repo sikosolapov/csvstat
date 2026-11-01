@@ -1,0 +1,5 @@
+"person,id",age,score,comment,empty,allnull
+"Alice, A.","42",9.5,"He said ""hi""",,
+ Bob ,17,10.0," hello, world ","",   
+"Carol",,8.25,plain,"   ",
+"Dave"," 18 ",7.0,"42",x,
