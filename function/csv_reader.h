@@ -1,7 +1,7 @@
 #ifndef CSV_READER_H
 #define CSV_READER_H
 
-#include <stdio.h>
+#include <stddef.h>
 
 /*
  * Типы статусов для чтения CSV-файлов:
@@ -26,7 +26,7 @@ typedef enum {
  * has_quotes - Флаг, указывающий кавычки, окружающие поле CSV. (0 - нет кавычек, 1 - есть кавычки)
  * status - статус чтения CSV (CSV_OK, CSV_READ_END, CSV_EOF, CSV_ERROR_FILE, CSV_ERROR_FORMAT).
  */
-typedef enum { false, true } bool;
+typedef enum {false, true} bool;
 
 typedef struct {
     char *data; 
@@ -52,6 +52,8 @@ typedef struct CSVReader CSVReader;
 CSVReader *csv_reader_create(const char *filename, CSVoptions options);
 CSVfieldresult csv_reader_read_field(CSVReader *reader);
 int csv_reader_reset(CSVReader *reader);
+#define CSV_RESET_OK 0
+#define CSV_RESET_ERR -1
 void csv_reader_destroy(CSVReader *reader);
 void csv_field_free(CSVfieldresult *result);
 
