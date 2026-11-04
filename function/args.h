@@ -4,14 +4,16 @@
 #include "csv_reader.h"
 
 typedef enum {
-    ARGS_OK = 0,
-    ARGS_HELP = 1,
-    ARGS_ERROR = 2,
+    ARGS_OK,
+    ARGS_HELP,
+    ARGS_ERROR,
     ARGS_COUNT 
 } ArgsStatus;
-
+/*
+* Основные команды  
+*/
 typedef enum{
-    COMMAND_NONE,
+    COMMAND_NELP,
     COMMAND_STATS,
     COMMAND_SCHEMA,
     COMMAND_REPORT,
@@ -33,5 +35,4 @@ typedef struct{
 
 ArgsStatus parse_args(int argc, char *argv[], Args *args);
 void args_help_print(void);
-void args_command_help_print(Command command);
 #endif /* ARGS_H */
