@@ -148,6 +148,10 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
     */
     while (c != EOF){ 
         if (has_quotes && !closed_quotes){
+            if (c == '\n' && !reader->options.multiline){
+                status = CSV_ERROR_FORMAT;
+                break;
+            }
             if (c == '"'){
                 int next_c = fgetc(reader->file);
                 if (next_c == '"'){
@@ -174,6 +178,10 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
             status = CSV_ERROR_FORMAT;
             break;
         } else{
+            if (c == '"'){
+                status = CSV_ERROR_FORMAT;
+                break;
+            }
             if (c == '\n'){
                 status = CSV_READ_END;
                 break;
