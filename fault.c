@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 static const char *const messages[EXIT_COUNT] = {
-    [EXIT_OK]         = "", // Пустая строка для сохранения соответствия индексов enum и массива
+    [EXIT_OK]         = "", // Все норм, поэтому ничего не надо выводить. В выводе будут данные.
     [EXIT_ERROR_FILE] = "Ошибка файла, данных, памяти.",
     [EXIT_ERROR_ARG]  = "Ошибка аргументов.",
 };
