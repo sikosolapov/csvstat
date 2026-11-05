@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <stddef.h>
 
 size_t field_check_and_cut(char *s, bool has_quotes){
     assert(s != NULL);

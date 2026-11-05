@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <errno.h>
 
 /*
 * Структура CSVReader для чтения CSV-файлов.
@@ -20,7 +21,9 @@ struct CSVReader {
 
 // Создает новый объект CSVReader для чтения CSV-файла.
 CSVReader *csv_reader_create(const char *filename, CSVoptions options){
-    if (!filename){
+    char deli = options.delimiter;
+    if (!filename || deli == ' ' || deli == '\t' || deli == '"' || deli == '\n' || deli == '\r' || deli == '\0'){
+        errno = EINVAL;
         return NULL;
     }
     FILE *file = fopen(filename, "r");
@@ -139,8 +142,25 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
     bool has_quotes = false;
     bool closed_quotes = false;
     CSVstatus status = CSV_OK;
+    while (c == ' ' || c == '\t'){
+        if (len + 1 >= size){
+            size *= 2;
+            char *tmp = realloc(buffer, size);
+            if (!tmp){
+                free(buffer);
+                CSVfieldresult result = {NULL, 0, false, CSV_ERROR_FILE};
+                return result;
+            }
+            buffer = tmp;
+        }
+        buffer[len] = (char)c;
+        len++;
+        c = fgetc(reader->file);
+    }
+    
     if (c == '"'){
         has_quotes = true;
+        len = 0;
         c = fgetc(reader->file);
     }
     /*
@@ -163,7 +183,7 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
                 }
             }
         } else if (has_quotes && closed_quotes) {
-            if (c == ' ' || c == '\t'){
+            if (c == ' ' || c == '\t') {
                 c = fgetc(reader->file);
                 continue;
             } 
@@ -225,17 +245,18 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
         if (has_quotes && !closed_quotes){
             status = CSV_ERROR_FORMAT;
         } else {
-            status = CSV_EOF;
+            status = CSV_READ_END;
         }
     }
     /*
     * Обновляем состояние читателя в зависимости от статуса.
     */
-    if (status == CSV_READ_END || status == CSV_EOF){
-        reader->in_record = true;
-    } else {
-        reader->in_record = false;
+    if (status == CSV_ERROR_FORMAT){
+        free(buffer);
+        CSVfieldresult result = {NULL, 0, false, CSV_ERROR_FORMAT};
+        return result;
     }
+    reader->in_record = (status == CSV_READ_END);
     CSVfieldresult result = {buffer, len, has_quotes, status};
     return result;
 }

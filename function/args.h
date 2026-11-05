@@ -13,7 +13,8 @@ typedef enum {
 * Основные команды  
 */
 typedef enum{
-    COMMAND_NELP,
+    COMMAND_NONE,
+    COMMAND_HELP,
     COMMAND_STATS,
     COMMAND_SCHEMA,
     COMMAND_REPORT,
