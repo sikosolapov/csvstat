@@ -2,7 +2,7 @@
 #include "args.h"
 
 int main(int argc, char *argv[]) {
-    Args args;
+    Args args = {0};
     ArgsStatus st = parse_args(argc, argv, &args);
 
     if (st == ARGS_HELP){
@@ -15,18 +15,12 @@ int main(int argc, char *argv[]) {
     
     switch(args.command){
         case COMMAND_SCHEMA:
-
-            break;
+            return args_schema_print(&args);
         case COMMAND_STATS:
-
-            break;
+            return args_stats_print(&args);
         case COMMAND_REPORT:
-
-            break;
+            return status(EXIT_ERROR_ARG, "Команда report не реализована");
         default:
             return status(EXIT_ERROR_ARG, "Неизвестная команда.");
     }
-
-    
-    return EXIT_OK;
 }

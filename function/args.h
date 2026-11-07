@@ -80,6 +80,9 @@ typedef struct {
     size_t sum_len;
     size_t empty;
 } statistics_info;
-
 int args_stats_print(const Args *args);
+/*
+*
+*/
+int args_report_print(const Args *args);
 #endif /* ARGS_H */
