@@ -32,7 +32,7 @@ static int ERROR_schema(CSVReader *reader, schema_stats *stats, CSVfieldresult *
 * Снова для прекрасной жизни используем "расширение территории" 
 */
 static bool schema_expansion(schema_column **columns, size_t *size){
-    size_t cap = (*size == 0) ? 4: *size * 2;
+    size_t cap = (*size == 0) ? 4 : *size * 2;
     schema_column *tmp = realloc(*columns, cap * sizeof(schema_column));
     if (!tmp){
         return false;
@@ -42,13 +42,10 @@ static bool schema_expansion(schema_column **columns, size_t *size){
     return true;
 }
 /*
-* Сама функция schema
+* Сама функция schema с выводом
 */
 int args_schema_print(const Args *args){
     assert(args != NULL && args->input_file != NULL);
-    /*
-    *  что-то точно хочу написать
-    */
     CSVoptions option = {
         .delimiter = args->delimiter,
         .multiline = args->multiline
