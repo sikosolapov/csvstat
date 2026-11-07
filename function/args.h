@@ -36,4 +36,6 @@ typedef struct{
 
 ArgsStatus parse_args(int argc, char *argv[], Args *args);
 void args_help_print(void);
+int args_schema_print(const Args *args);
+int args_stats_print(const Args *args);
 #endif /* ARGS_H */

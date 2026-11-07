@@ -11,7 +11,7 @@ SRC := main.c fault.c $(wildcard function/*.c function/*/*.c)
 STD      := -std=c11
 WARNINGS := -Wall -Wextra -Wpedantic -Wshadow -Werror
 DEPFLAGS := -MMD -MP
-INCLUDES := -I.
+INCLUDES := -I. -Ifunction
 LDLIBS   := -lm
 
 ifeq ($(MODE),release)

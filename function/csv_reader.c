@@ -18,12 +18,14 @@ struct CSVReader {
     bool in_record;
     size_t probably_newline; 
 };
-
+// Проверка разделителя
+bool csv_delimiter_check (char d){
+    unsigned char D = (unsigned char)d;
+    return D != 0 && D < 128 && d != ' ' && d != '"' && d != '\t' && d != '\r' && d != '\n';
+}
 // Создает новый объект CSVReader для чтения CSV-файла.
 CSVReader *csv_reader_create(const char *filename, CSVoptions options){
-    char deli = options.delimiter;
-    if (!filename || deli == ' ' || deli == '\t' || deli == '"' || deli == '\n' || deli == '\r' || deli == '\0'){
-        errno = EINVAL;
+    if (!filename || !csv_delimiter_check(options.delimiter)){
         return NULL;
     }
     FILE *file = fopen(filename, "r");
@@ -72,19 +74,28 @@ int csv_reader_reset(CSVReader *reader){
     reader->probably_newline = 0;
     return CSV_RESET_OK;
 }
+// Функции, чтобы не ctrl-c, ctrl-v 
+static CSVfieldresult result_out(CSVstatus st){
+    CSVfieldresult result = {NULL, 0, false, st};
+    return result;
+}
+static bool domain_expansion(char **buffer, size_t *size){
+    char *tmp = realloc(*buffer, *size * 2);
+    if (!tmp){
+        free(*buffer);
+        *buffer = NULL;
+        return false;
+    }
+    *buffer = tmp;
+    *size *= 2;
+    return true;
+}
 /*
 * Возвращает пустой результат чтения поля CSV с данными, указывающими на пустую строку.
 * Нужен для проверки есть ли пустые строки внутри записи CSV, используется probably_newline.
 */
 static CSVfieldresult empty_field_result(void) {
-    char *empty_field = malloc(1);
-    if (!empty_field) {
-        CSVfieldresult result = {NULL, 0, false, CSV_ERROR_FILE};
-        return result;
-    }
-    empty_field[0] = '\0';
-    CSVfieldresult result = {empty_field, 0, false, CSV_READ_END};
-    return result;
+    return result_out(CSV_READ_END);
 }
 // Читает следующее поле CSV из объекта CSVReader.
 CSVfieldresult csv_reader_read_field(CSVReader *reader){
@@ -144,14 +155,9 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
     CSVstatus status = CSV_OK;
     while (c == ' ' || c == '\t'){
         if (len + 1 >= size){
-            size *= 2;
-            char *tmp = realloc(buffer, size);
-            if (!tmp){
-                free(buffer);
-                CSVfieldresult result = {NULL, 0, false, CSV_ERROR_FILE};
-                return result;
+            if (!domain_expansion(&buffer, &size)){
+                return result_out(CSV_ERROR_FILE);
             }
-            buffer = tmp;
         }
         buffer[len] = (char)c;
         len++;
@@ -213,17 +219,13 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
         }
         /*
         *Если длина буфера достигла текущего размера, увеличиваем размер буфера вдвое, 
-        * ..., чтобы точно вместить все данные поля.
+        *чтобы точно вместить все данные поля.
         */ 
         if (len + 1 >= size) {
-            size *= 2;
-            char *tmp = realloc(buffer, size);
-            if (!tmp) {
-                free(buffer);
-                CSVfieldresult result = {NULL, 0, false, CSV_ERROR_FILE};
-                return result;
+            if (!domain_expansion(&buffer, &size)){
+                status = CSV_ERROR_FILE;
+                return result_out(status);
             }
-            buffer = tmp;
         }
         buffer[len] = (char)c;
         len++;
@@ -245,7 +247,7 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
         if (has_quotes && !closed_quotes){
             status = CSV_ERROR_FORMAT;
         } else {
-            status = CSV_READ_END;
+            status = CSV_EOF;
         }
     }
     /*
@@ -256,7 +258,7 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
         CSVfieldresult result = {NULL, 0, false, CSV_ERROR_FORMAT};
         return result;
     }
-    reader->in_record = (status == CSV_READ_END);
+    reader->in_record = (status == CSV_READ_END || status == CSV_EOF);
     CSVfieldresult result = {buffer, len, has_quotes, status};
     return result;
 }

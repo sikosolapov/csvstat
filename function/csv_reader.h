@@ -7,7 +7,7 @@
  * Типы статусов для чтения CSV-файлов:
  * CSV_OK - успешное чтение поля CSV.
  * CSV_READ_END - достигнут конец строки CSV. Показывает, что нужно перейти к следующей строке CSV.
- * CSV_EOF - достигнут конец файла (data != NULL — последнее поле успешно прочитано, но завершающего '\n' нет; data == NULL — конец файла, больше полей нет).
+ * CSV_EOF - достигнут конец файла.
  * CSV_ERROR_FILE - произошла ошибка при чтении файла/ выделения памяти.
  * CSV_ERROR_FORMAT - произошла ошибка формата CSV (например, несоответствие кавычек).
  */
@@ -42,12 +42,14 @@ typedef struct{
 typedef struct CSVReader CSVReader;
 
 /* Функции для чтения CSV-файлов:
+ * Проверка delimiter
  * Создает новый объект CSVReader для чтения CSV-файла.
  * Читает следующее поле CSV из объекта CSVReader.
  * Сбрасывает состояние объекта CSVReader -> Начинаем чтение с начала. Для повторного чтения CSV-файла для stats.
  * Полное освобождение ресурсов и закрытие файла, связанных с объектом CSVReader.
  * Освобождает ресурсы для конкретного результата чтения поля CSV.
  */
+bool csv_delimiter_check (char d);
 CSVReader *csv_reader_create(const char *filename, CSVoptions options);
 CSVfieldresult csv_reader_read_field(CSVReader *reader);
 #define CSV_RESET_OK 0

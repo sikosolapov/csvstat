@@ -1,7 +1,8 @@
 #include "args.h"
+#include "csv_reader.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 void args_help_print(void){
     fputs(
@@ -19,11 +20,12 @@ void args_help_print(void){
 }
 
 ArgsStatus parse_args(int argc, char *argv[], Args *args){
+    assert(args != NULL);
     /*
     * Начальное состояние
     */
     args->command = COMMAND_NONE;
-    args->delimiter = ',';
+    args->delimiter = ';';
     args->delimiter_status = false;
     args->multiline = args->multiline_status = false;
     args->scientific = args->scientific_status = false;
@@ -46,7 +48,7 @@ ArgsStatus parse_args(int argc, char *argv[], Args *args){
                 if (args->delimiter_status) return ARGS_ERROR;
                 if (i + 1 >= argc) return ARGS_ERROR;
                 const char *v = argv[i+1]; char c = v[0];
-                if (strlen(v) != 1 || c == '"' || c == '\t' || c == ' ' || c == '\r' || c == '\n'){
+                if (strlen(v) != 1 || !csv_delimiter_check(c)){
                     return ARGS_ERROR;
                 }
                 args->delimiter = c; args->delimiter_status = true;
@@ -96,7 +98,7 @@ ArgsStatus parse_args(int argc, char *argv[], Args *args){
     }
     if (args->command == COMMAND_NONE) return ARGS_ERROR;
     if (args->input_file == NULL) return ARGS_ERROR;
-    if (args->command == COMMAND_REPORT && args->input_file == NULL) return ARGS_ERROR;
+    if (args->command == COMMAND_REPORT && args->output_file == NULL) return ARGS_ERROR;
     if (args->command != COMMAND_REPORT && args->output_file != NULL) return ARGS_ERROR;
     return ARGS_OK;
 }
