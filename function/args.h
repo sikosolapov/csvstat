@@ -2,6 +2,7 @@
 #define ARGS_H
 
 #include "csv_reader.h"
+#include "field_type.h"
 
 typedef enum {
     ARGS_OK,
@@ -36,6 +37,20 @@ typedef struct{
 
 ArgsStatus parse_args(int argc, char *argv[], Args *args);
 void args_help_print(void);
+/*
+* Для Schema
+* Для удобства структуры, чтобы вывод сделать покайфу
+*/
+typedef struct {
+    size_t number;
+    char *name;
+    FieldType type;
+} schema_column;
+typedef struct {
+    size_t rows;
+    size_t columns;
+    schema_column *columns_st;
+} schema_stats;
 int args_schema_print(const Args *args);
 int args_stats_print(const Args *args);
 #endif /* ARGS_H */

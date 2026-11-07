@@ -121,3 +121,19 @@ FieldType type_inference(const char *s, bool has_quotes, bool scientific){
     }
     return FIELD_TYPE_INT;
 }
+
+const char* field_type_for_print(FieldType type){
+    switch (type)
+        {
+        case FIELD_TYPE_NULL:
+            return "NULL";
+        case FIELD_TYPE_INT:
+            return "STRING";
+        case FIELD_TYPE_DOUBLE:
+            return "DOUBLE";
+        case FIELD_TYPE_STRING:
+            return "STRING";
+        default:
+            return "Unknown";
+        }
+}

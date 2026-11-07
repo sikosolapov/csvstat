@@ -20,6 +20,7 @@ typedef enum {
 * Числа проверяются по синтаксису и допустимому диапазону согласно спецификации.
 */
 FieldType type_inference(const char *s, bool has_quotes, bool scientific);
-size_t field_check_and_cut(char *s, bool has_quotes); // Проверка на пробелы и табуляцию с последующим их .
+size_t field_check_and_cut(char *s, bool has_quotes); // Проверка на пробелы и табуляцию с последующим их игнором.
+const char* field_type_for_print(FieldType type); // из названия понятно для чего нужна
 
 #endif /* FIELD_TYPE_H */

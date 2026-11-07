@@ -25,7 +25,7 @@ ArgsStatus parse_args(int argc, char *argv[], Args *args){
     * Начальное состояние
     */
     args->command = COMMAND_NONE;
-    args->delimiter = ';';
+    args->delimiter = ',';
     args->delimiter_status = false;
     args->multiline = args->multiline_status = false;
     args->scientific = args->scientific_status = false;

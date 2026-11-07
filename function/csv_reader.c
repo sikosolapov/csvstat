@@ -25,9 +25,8 @@ bool csv_delimiter_check (char d){
 }
 // Создает новый объект CSVReader для чтения CSV-файла.
 CSVReader *csv_reader_create(const char *filename, CSVoptions options){
-    if (!filename || !csv_delimiter_check(options.delimiter)){
-        return NULL;
-    }
+    assert(filename != NULL);
+    assert(csv_delimiter_check(options.delimiter));
     FILE *file = fopen(filename, "r");
     if (!file) {
         return NULL;
@@ -95,7 +94,13 @@ static bool domain_expansion(char **buffer, size_t *size){
 * Нужен для проверки есть ли пустые строки внутри записи CSV, используется probably_newline.
 */
 static CSVfieldresult empty_field_result(void) {
-    return result_out(CSV_READ_END);
+    char *empty_field = malloc(1);
+    if (!empty_field) {
+        return result_out(CSV_ERROR_FILE);
+    }
+    empty_field[0] = '\0';
+    CSVfieldresult result = {empty_field, 0, false, CSV_READ_END};
+    return result;
 }
 // Читает следующее поле CSV из объекта CSVReader.
 CSVfieldresult csv_reader_read_field(CSVReader *reader){
@@ -111,8 +116,7 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
         }
         int first_char = fgetc(reader->file);
         if (first_char == EOF){
-            CSVfieldresult result = {NULL, 0, false,  ferror(reader->file) ? CSV_ERROR_FILE : CSV_EOF};
-            return result;
+            return result_out(ferror(reader->file) ? CSV_ERROR_FILE : CSV_EOF);
         }
         if (first_char == '\n'){
             size_t count = 1;
@@ -121,23 +125,19 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
                 count++;
             }
             if (ferror(reader->file)){
-                CSVfieldresult result = {NULL, 0, false, CSV_ERROR_FILE};
-                return result;
+                return result_out(CSV_ERROR_FILE);
             }
             if (next == EOF){
-                CSVfieldresult result = {NULL, 0, false, CSV_EOF};
-                return result;
+                return result_out(CSV_EOF);
             }
             if (ungetc(next, reader->file) == EOF){
-                CSVfieldresult result = {NULL, 0, false, CSV_ERROR_FILE};
-                return result;
+                return result_out(CSV_ERROR_FILE);
             }
             reader->probably_newline = count - 1;
             return empty_field_result();
         }
         if (ungetc(first_char, reader->file) == EOF){
-            CSVfieldresult result = {NULL, 0, false, CSV_ERROR_FILE};
-            return result;
+            return result_out(CSV_ERROR_FILE);
         }
     }
     /*
@@ -147,8 +147,7 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
     size_t len = 0, size = 16;
     char *buffer = malloc(size);
     if (!buffer) {
-        CSVfieldresult result = {NULL, 0, false, CSV_ERROR_FILE};
-        return result;
+        return result_out(CSV_ERROR_FILE);
     }
     bool has_quotes = false;
     bool closed_quotes = false;
@@ -223,8 +222,7 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
         */ 
         if (len + 1 >= size) {
             if (!domain_expansion(&buffer, &size)){
-                status = CSV_ERROR_FILE;
-                return result_out(status);
+                return result_out(CSV_ERROR_FILE);
             }
         }
         buffer[len] = (char)c;
@@ -237,8 +235,7 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
     */
     if (ferror(reader->file)){
         free(buffer);
-        CSVfieldresult result = {NULL, 0, false, CSV_ERROR_FILE};
-        return result;
+        return result_out(CSV_ERROR_FILE);
     }
     /*
     * Если достигнут конец файла, проверяем, не было ли ошибок при чтении.
@@ -247,7 +244,7 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
         if (has_quotes && !closed_quotes){
             status = CSV_ERROR_FORMAT;
         } else {
-            status = CSV_EOF;
+            status = CSV_READ_END;
         }
     }
     /*
@@ -255,10 +252,9 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
     */
     if (status == CSV_ERROR_FORMAT){
         free(buffer);
-        CSVfieldresult result = {NULL, 0, false, CSV_ERROR_FORMAT};
-        return result;
+        return result_out(CSV_ERROR_FORMAT);
     }
-    reader->in_record = (status == CSV_READ_END || status == CSV_EOF);
+    reader->in_record = (status == CSV_READ_END);
     CSVfieldresult result = {buffer, len, has_quotes, status};
     return result;
 }
