@@ -22,9 +22,15 @@ static void schema_stats_free(schema_stats *stats){
     stats->columns = 0;
     stats->rows = 0;
 }
-static int ERROR_schema(CSVReader *reader, schema_stats *stats, CSVfieldresult *field, const char *msg){
-    csv_field_free(field);
-    schema_stats_free(stats);
+static int ERROR_schema(CSVReader *reader, schema_stats *stats, size_t columns, CSVfieldresult *field, const char *msg){
+    if (field) csv_field_free(field);
+    if (stats->columns_st){
+        for (size_t h = 0; h < columns; h++){
+            free(stats->columns_st[h].name);
+        }
+        free(stats->columns_st);
+        stats->columns_st = NULL;
+    }
     csv_reader_destroy(reader);
     return status(EXIT_ERROR_FILE,  msg);
 }
@@ -60,23 +66,29 @@ int args_schema_print(const Args *args){
     size_t capacity = 0;        // Кентик для размера массивчика
     while(true){
         CSVfieldresult field = csv_reader_read_field(reader);
+        if (field.status == CSV_EOF && field.data == NULL){
+            if (header){
+                return ERROR_schema(reader, &statistics, num_column, &field, "Ошибка: Пустой файл");
+            }
+            break;
+        }
         if (field.status == CSV_ERROR_FILE || field.status == CSV_ERROR_FORMAT){
-            return ERROR_schema(reader, &statistics, &field, "Ошибка определения типа файла. Ошибка файла");
+            return ERROR_schema(reader, &statistics, num_column, &field, "Ошибка определения типа файла. Ошибка файла");
         }
         if (field.data != NULL){
             field.length = field_check_and_cut(field.data, field.has_quotes);
         }
         if (header){
             if (field.data == NULL || field.length == 0){
-                return ERROR_schema(reader, &statistics, &field, "Нет имени столбца");
+                return ERROR_schema(reader, &statistics, num_column, &field, "Нет имени столбца");
             }
             for (size_t q = 0; q < num_column; q++){
                 if (strcmp(statistics.columns_st[q].name, field.data) == 0){
-                    return ERROR_schema(reader, &statistics, &field, "Повтор имени. Поменяй, если хочешь");
+                    return ERROR_schema(reader, &statistics, num_column, &field, "Повтор имени. Поменяй, если хочешь");
                 }
             }
             if (num_column >= capacity && !schema_expansion(&statistics.columns_st, &capacity)){
-                return ERROR_schema(reader, &statistics, &field, "Ошибка: Что-то с выделением памяти");
+                return ERROR_schema(reader, &statistics, num_column, &field, "Ошибка: Что-то с выделением памяти");
             }
             statistics.columns_st[num_column].number = num_column;
             statistics.columns_st[num_column].name = field.data;
@@ -85,35 +97,39 @@ int args_schema_print(const Args *args){
             num_column++;
         } else {
             if (num_column >= statistics.columns){
-                return ERROR_schema(reader, &statistics, &field, "Ошибка: Почему номер столбца больше их количества...");
+                return ERROR_schema(reader, &statistics, num_column, &field, "Ошибка: Почему номер столбца больше их количества...");
             }
-            FieldType type_field = type_inference(field.data, field.has_quotes, args->scientific);
+            FieldType type_field = FIELD_TYPE_NULL;
+            if (field.data != NULL){
+                type_field = type_inference(field.data, field.has_quotes, args->scientific);
+            }
             if (type_field > statistics.columns_st[num_column].type){
                 statistics.columns_st[num_column].type = type_field;
             }
             num_column++;
         }
         bool row_status = (field.status == CSV_READ_END || field.status == CSV_EOF); // Для строк статус
-        csv_field_free(&field);
         if (row_status){
             if (header){
                 statistics.columns = num_column;
                 header = false;
             } else {
                 if (num_column != statistics.columns){
-                    return ERROR_schema(reader, &statistics, NULL, "Есть чутка несовпадения");
+                    return ERROR_schema(reader, &statistics, statistics.columns, &field, "Есть чутка несовпадения");
                 }
                 statistics.rows++;
             }
             num_column = 0;
         }
-         if (field.status == CSV_EOF) break;
+        CSVstatus s = field.status;
+        csv_field_free(&field);
+        if (s == CSV_EOF) break;
     }
     if (statistics.columns == 0){
-        return ERROR_schema(reader, &statistics, NULL, "Файл какой-то пустой");
+        return ERROR_schema(reader, &statistics, num_column, NULL, "Файл какой-то пустой");
     }
-    printf("rows: %zu\n", statistics.rows);
-    printf("columns: %zu\n", statistics.columns);
+    printf("rows %zu\n", statistics.rows);
+    printf("columns %zu\n", statistics.columns);
     for (size_t W = 0; W < statistics.columns; W++){
         const char *name_type = field_type_for_print(statistics.columns_st[W].type);
         printf("%zu \"", W);

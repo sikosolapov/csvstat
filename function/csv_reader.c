@@ -155,6 +155,7 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
     while (c == ' ' || c == '\t'){
         if (len + 1 >= size){
             if (!domain_expansion(&buffer, &size)){
+                free(buffer);
                 return result_out(CSV_ERROR_FILE);
             }
         }
@@ -222,6 +223,7 @@ CSVfieldresult csv_reader_read_field(CSVReader *reader){
         */ 
         if (len + 1 >= size) {
             if (!domain_expansion(&buffer, &size)){
+                free(buffer);
                 return result_out(CSV_ERROR_FILE);
             }
         }

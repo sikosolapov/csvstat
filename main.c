@@ -19,8 +19,12 @@ int main(int argc, char *argv[]) {
         case COMMAND_STATS:
             return args_stats_print(&args);
         case COMMAND_REPORT:
-            return status(EXIT_ERROR_ARG, "Команда report не реализована");
+            return args_report_print(&args); // Создан для адекватных названий
         default:
             return status(EXIT_ERROR_ARG, "Неизвестная команда.");
     }
 }
+/*
+* На 9/10 не успею сделать, поэтому scientific и multiline останутся не реализованными, 
+* невзирая на то, что они учитываются
+*/
