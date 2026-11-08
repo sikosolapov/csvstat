@@ -73,7 +73,7 @@ int args_schema_print(const Args *args){
             break;
         }
         if (field.status == CSV_ERROR_FILE || field.status == CSV_ERROR_FORMAT){
-            return ERROR_schema(reader, &statistics, num_column, &field, "Ошибка определения типа файла. Ошибка файла");
+            return ERROR_schema(reader, &statistics, header ? num_column : statistics.columns, &field, "Ошибка определения типа файла. Ошибка файла");
         }
         if (field.data != NULL){
             field.length = field_check_and_cut(field.data, field.has_quotes);
@@ -97,7 +97,7 @@ int args_schema_print(const Args *args){
             num_column++;
         } else {
             if (num_column >= statistics.columns){
-                return ERROR_schema(reader, &statistics, num_column, &field, "Ошибка: Почему номер столбца больше их количества...");
+                return ERROR_schema(reader, &statistics, statistics.columns, &field, "Ошибка: Почему номер столбца больше их количества...");
             }
             FieldType type_field = FIELD_TYPE_NULL;
             if (field.data != NULL){

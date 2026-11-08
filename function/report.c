@@ -8,6 +8,25 @@
 #include <string.h>
 #include <math.h>
 /*
+* Для больших значения INT
+*/
+static void correct_sum_int(long long *x, unsigned long long *y, long long z){
+    unsigned long long z1 = (unsigned long long)z;
+    unsigned long long y0 = *y;
+    *y += z1;
+    if (*y < y0){
+        (*x)++;
+    }
+    if (z < 0){
+        (*x)--;
+    }
+}
+static double correct_mean_int(long long x, unsigned long long y, size_t cnt){
+    if (cnt == 0) return 0.0;
+    long double SUM = (long double)x * 18446744073709551616.0L + (long double)y;
+    return (double)(SUM / (long double)cnt);
+}
+/*
 * Очистка, чтобы снова не делать ctrl-c, ctrl-v. Лень залог успеха
 */
 static void report_free(statistics_info *information, size_t capacity){
@@ -18,7 +37,11 @@ static void report_free(statistics_info *information, size_t capacity){
     free(information);
 }
 static int error_report(CSVReader *reader, statistics_info *information, size_t columns, 
-    CSVfieldresult *field, const char *msg){
+    CSVfieldresult *field, const char *msg, FILE *output, const char *output_f){
+    if (output){
+        fclose(output);
+        remove(output_f);
+    }
     csv_field_free(field);
     report_free(information, columns);
     csv_reader_destroy(reader);
@@ -67,27 +90,27 @@ int args_report_print(const Args *args){
         CSVfieldresult field = csv_reader_read_field(reader);
         if (field.status == CSV_EOF && field.data == NULL){
             if (header){
-                return error_report(reader, information, num_column, &field, "Ошибка: Пустой файл");
+                return error_report(reader, information, num_column, &field, "Ошибка: Пустой файл", output, args->output_file);
             }
             break;
         }
         if (field.status == CSV_ERROR_FILE || field.status == CSV_ERROR_FORMAT){
-            return error_report(reader, information, header? num_column: columns, &field, "Ошибка: Файла/формата");
+            return error_report(reader, information, header? num_column: columns, &field, "Ошибка: Файла/формата",output, args->output_file);
         }
         if (field.data != NULL){
             field.length = field_check_and_cut(field.data, field.has_quotes);
         }
         if (header){
             if (field.data == NULL || field.length == 0){
-                return error_report(reader, information, num_column, &field, "Ошибка: Нет названия");
+                return error_report(reader, information, num_column, &field, "Ошибка: Нет названия", output, args->output_file);
             }
             for (size_t j = 0; j < num_column; j++){
                 if (strcmp(information[j].name, field.data) == 0){
-                    return error_report(reader, information, header ? num_column : columns, &field, "Ошибка: Повтор имени");
+                    return error_report(reader, information, header ? num_column : columns, &field, "Ошибка: Повтор имени", output, args->output_file);
                 }
             }
             if (num_column >= capacity && !report_expansion(&information, &capacity)){
-                return error_report(reader, information, num_column, &field, "Ошибка: При выделении памяти");
+                return error_report(reader, information, num_column, &field, "Ошибка: При выделении памяти", output, args->output_file);
             }
             information[num_column].name = field.data;
             information[num_column].type = FIELD_TYPE_NULL;
@@ -95,7 +118,7 @@ int args_report_print(const Args *args){
             num_column++;
         } else {
             if (num_column >= columns){
-                return error_report(reader, information, columns, &field, "Ошибка: В строке больше полей, чем в заголовке");
+                return error_report(reader, information, columns, &field, "Ошибка: В строке больше полей, чем в заголовке", output, args->output_file);
             }
             FieldType type_field = FIELD_TYPE_NULL;
             if (field.data != NULL){
@@ -125,7 +148,7 @@ int args_report_print(const Args *args){
                             information[num_column].min_int = number;
                         }
                     }
-                    information[num_column].sum_int += (double)number;
+                    correct_sum_int(&information[num_column].x, &information[num_column].y, number);
                     if (number % 2 == 0) information[num_column].even++;
                     if (number > 0) information[num_column].positive_int++;
                     if (number < 0) information[num_column].negative_int++;
@@ -193,7 +216,7 @@ int args_report_print(const Args *args){
                 num_column = 0;
             } else {
                 if (num_column != columns){
-                    return error_report(reader, information, header ? num_column : columns, &field, "Ошибка: Недостаточно полей");
+                    return error_report(reader, information, header ? num_column : columns, &field, "Ошибка: Недостаточно полей", output, args->output_file);
                 }
                 rows++;
                 num_column = 0;
@@ -228,7 +251,7 @@ int args_report_print(const Args *args){
         case FIELD_TYPE_INT:
             fprintf(output, "        |            |                      | Min: %lld\n", information[qwe].min_int);
             fprintf(output, "        |            |                      | Max: %lld\n", information[qwe].max_int);
-            fprintf(output, "        |            |                      | Mean: %.6f\n", information[qwe].count != 0 ? information[qwe].sum_int / information[qwe].count : 0.0);
+            fprintf(output, "        |            |                      | Mean: %.6f\n", correct_mean_int(information[qwe].x, information[qwe].y, information[qwe].count));
             fprintf(output, "        |            |                      | Positive: %zu\n", information[qwe].positive_int);
             fprintf(output, "        |            |                      | Negative: %zu\n", information[qwe].negative_int);
             fprintf(output, "        |            |                      | Even: %zu\n", information[qwe].even);

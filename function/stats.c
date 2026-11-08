@@ -8,6 +8,25 @@
 #include <string.h>
 #include <math.h>
 /*
+* Для больших значения INT
+*/
+static void correct_sum_int(long long *x, unsigned long long *y, long long z){
+    unsigned long long z1 = (unsigned long long)z;
+    unsigned long long y0 = *y;
+    *y += z1;
+    if (*y < y0){
+        (*x)++;
+    }
+    if (z < 0){
+        (*x)--;
+    }
+}
+static double correct_mean_int(long long x, unsigned long long y, size_t cnt){
+    if (cnt == 0) return 0.0;
+    long double SUM = (long double)x * 18446744073709551616.0L + (long double)y;
+    return (double)(SUM / (long double)cnt);
+}
+/*
 * Очистка, чтобы снова не делать ctrl-c, ctrl-v. Лень залог успеха
 */
 static void stats_free(statistics_info *information, size_t capacity){
@@ -120,7 +139,7 @@ int args_stats_print(const Args *args){
                             information[num_column].min_int = number;
                         }
                     }
-                    information[num_column].sum_int += (double)number;
+                    correct_sum_int(&information[num_column].x, &information[num_column].y, number);
                     if (number % 2 == 0) information[num_column].even++;
                     if (number > 0) information[num_column].positive_int++;
                     if (number < 0) information[num_column].negative_int++;
@@ -220,7 +239,7 @@ int args_stats_print(const Args *args){
             printf("nulls %zu\n", information[t].nulls);
             printf("min %lld\n", information[t].min_int);
             printf("max %lld\n", information[t].max_int);
-            printf("mean %.6f\n", information[t].count != 0 ? information[t].sum_int / information[t].count : 0.0);
+            printf("mean %.6f\n", correct_mean_int(information[t].x, information[t].y, information[t].count));
             printf("positive %zu\n", information[t].positive_int);
             printf("negative %zu\n", information[t].negative_int);
             printf("even %zu\n", information[t].even);

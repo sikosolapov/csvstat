@@ -65,7 +65,7 @@ typedef struct {
     // Для INT
     bool start_int; // Для корректной работы max, min
     long long max_int, min_int;
-    double sum_int; 
+    long long x; unsigned long long y; // Для SUM из-за больших значений, чтобы было все OK 
     size_t even; // число четных значений
     size_t positive_int, negative_int;
     // Для DOUBLE
