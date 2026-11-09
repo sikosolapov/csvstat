@@ -33,6 +33,11 @@ ArgsStatus parse_args(int argc, char *argv[], Args *args){
     /*
     * Выполнение - Основной часть
     */
+    if (argc >= 2 && strcmp(argv[1], "--help") == 0){
+        args_help_print();
+        if (argc != 2) return ARGS_ERROR;
+        return ARGS_HELP;
+    }
     for(int i = 1 ; i < argc; ++i){
         const char *w = argv[i];
         /*
@@ -41,7 +46,6 @@ ArgsStatus parse_args(int argc, char *argv[], Args *args){
         */
         if (w[0] == '-' && w[1] == '-'){
             if (strcmp(w, "--help") == 0){
-                if (argc != 2) return ARGS_ERROR;
                 return ARGS_HELP;
             }
             if (strcmp(w, "--delimiter") == 0){
